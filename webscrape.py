@@ -12,8 +12,8 @@ async def scrape():
         html = await page.content()
         await browser.close()
 
-        soup = BeautifulSoup(html, "html.parser")
-        print(soup.select_one("div.EsgRatings.EsgRatings--rating"))
+        with open("page.html", "w", encoding="utf-8") as f:
+            f.write(html)
 
 if __name__ == "__main__":
     asyncio.run(scrape())
