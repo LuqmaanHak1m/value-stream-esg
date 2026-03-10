@@ -79,7 +79,7 @@ function displayChart(data) {
         categoryData.metrics.forEach(metric => {
             labels.push(metric.metric);
             originalScores.push(metric.score);
-            adjustedScores.push(metric.score); // Will be updated with LLM data
+            adjustedScores.push(metric.adjusted_score || metric.score);
         });
     });
     
@@ -117,6 +117,20 @@ function displayChart(data) {
                 legend: {
                     display: true,
                     position: 'top'
+                },
+                tooltip: {
+                    callbacks: {
+                        afterLabel: function(context) {
+                            const index = context.dataIndex;
+                            const original = originalScores[index];
+                            const adjusted = adjustedScores[index];
+                            const diff = (adjusted - original).toFixed(2);
+                            if (diff != 0) {
+                                return `Change: ${diff > 0 ? '+' : ''}${diff}`;
+                            }
+                            return '';
+                        }
+                    }
                 }
             }
         }
@@ -135,11 +149,12 @@ function displayNews(data) {
         <div class="news-article">
             <h4>${article.title}</h4>
             <p>${article.summary || 'No summary available'}</p>
+            ${article.date ? `<p style="color: #7f8c8d; font-size: 0.9em; margin-top: 5px;">Date: ${article.date}</p>` : ''}
             <div class="impact">
                 ${Object.entries(article.impact || {}).map(([metric, score]) => {
                     const isPositive = score > 0;
                     return `<span class="impact-badge ${isPositive ? 'positive' : 'negative'}">
-                        ${metric}: ${score > 0 ? '+' : ''}${score}
+                        ${metric}: ${score > 0 ? '+' : ''}${score.toFixed(1)}
                     </span>`;
                 }).join('')}
             </div>
