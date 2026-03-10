@@ -7,15 +7,11 @@ async def scrape(url, selector=None, wait=False):
     async with async_playwright() as p:
         browser = await p.chromium.launch(headless=True)
         page = await browser.new_page()
-
         await page.goto(url, wait_until="domcontentloaded")
-
         if wait and selector:
             await page.wait_for_selector(selector, timeout=15000)
-
         html = await page.content()
         await browser.close()
-
         with open("page.html", "w", encoding="utf-8") as f:
             f.write(html)
 
