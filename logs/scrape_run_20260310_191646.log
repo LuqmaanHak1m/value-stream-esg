@@ -1,0 +1,34 @@
+Run started: 2026-03-10T19:16:46.971930
+Run finished: 2026-03-10T19:22:17.259449
+Duration: 0:05:30.287519
+
+Companies scraped: nike, adidas, puma
+Search keywords: ''
+Past X years: 3
+
+Combined CSV output: outputs\all_esg_articles_20260310_191646.csv
+Total rows in combined dataframe: 163
+
+Results by company and source:
+  - company=nike, source=ESG News, rows=52, status=ok
+  - company=nike, source=ESG Dive, rows=23, status=ok
+  - company=nike, source=ESG Today, rows=38, status=ok
+  - company=adidas, source=ESG News, rows=2, status=ok
+  - company=adidas, source=ESG Dive, rows=12, status=ok
+  - company=adidas, source=ESG Today, rows=5, status=ok
+  - company=puma, source=ESG News, rows=10, status=ok
+  - company=puma, source=ESG Dive, rows=3, status=ok
+  - company=puma, source=ESG Today, rows=18, status=ok
+
+Totals by source:
+  - ESG Dive: 38 rows
+  - ESG News: 64 rows
+  - ESG Today: 61 rows
+
+Totals by company:
+  - adidas: 19 rows
+  - nike: 113 rows
+  - puma: 31 rows
+
+Errors:
+  None
