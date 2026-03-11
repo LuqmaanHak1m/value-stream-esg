@@ -19,8 +19,8 @@ OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 LOG_DIR.mkdir(parents=True, exist_ok=True)
 
 
-LLM_PROVIDER = "openai"
-LLM_MODEL = "gpt-4o-mini"
+LLM_PROVIDER = "openrouter"
+LLM_MODEL = "google/gemini-3-flash-preview"
 PROMPT_VERSION = "v1"
 
 
@@ -29,9 +29,9 @@ def score_articles_from_database(
     output_csv: Path | None = None,
 ) -> pd.DataFrame:
     df = fetch_articles_to_score(
-    llm_model=LLM_MODEL,
-    prompt_version=PROMPT_VERSION,
-    limit=100
+        llm_model=LLM_MODEL,
+        prompt_version=PROMPT_VERSION,
+        limit=limit,
     )
 
     if df.empty:

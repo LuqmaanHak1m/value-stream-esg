@@ -23,7 +23,11 @@ ESG_FIELDS = [
 ]
 
 
-def fetch_articles_to_score(limit: int | None = None) -> pd.DataFrame:
+def fetch_articles_to_score(
+    llm_model: str,
+    prompt_version: str,
+    limit: int | None = None,
+) -> pd.DataFrame:
     query = """
         SELECT
             a.id AS article_id,
@@ -36,17 +40,24 @@ def fetch_articles_to_score(limit: int | None = None) -> pd.DataFrame:
         FROM public.articles a
         LEFT JOIN public.article_scores s
             ON a.id = s.article_id
+            AND s.llm_model = %(model)s
+            AND s.prompt_version = %(prompt_version)s
         WHERE s.article_id IS NULL
         ORDER BY a.published_at DESC NULLS LAST, a.id DESC
     """
 
+    params = {
+        "model": llm_model,
+        "prompt_version": prompt_version,
+    }
+
     if limit is not None:
-        query += f" LIMIT {int(limit)}"
+        query += " LIMIT %(limit)s"
+        params["limit"] = int(limit)
 
     conn = get_db_connection()
     try:
-        df = pd.read_sql(query, conn)
-        return df
+        return pd.read_sql(query, conn, params=params)
     finally:
         conn.close()
 
@@ -85,9 +96,8 @@ def build_score_record(
         + esg_scores["tax_transparency_accounting"]
     )
 
-    scored_at = datetime.now(timezone.utc)
-
     raw_response = json.dumps(scores)
+    scored_at = datetime.now(timezone.utc)
 
     return (
         int(row["article_id"]),

@@ -1,0 +1,28 @@
+company_name,source,rows_returned,status
+nike,ESG News,39,ok
+nike,ESG Dive,23,ok
+nike,ESG Today,38,ok
+adidas,ESG News,2,ok
+adidas,ESG Dive,12,ok
+adidas,ESG Today,5,ok
+puma,ESG News,10,ok
+puma,ESG Dive,3,ok
+puma,ESG Today,18,ok
+lululemon,ESG News,9,ok
+lululemon,ESG Dive,16,ok
+lululemon,ESG Today,25,ok
+jd sports,ESG News,8,ok
+jd sports,ESG Dive,0,ok
+jd sports,ESG Today,0,ok
+burberry,ESG News,3,ok
+burberry,ESG Dive,1,ok
+burberry,ESG Today,12,ok
+columbia,ESG News,69,ok
+columbia,ESG Dive,42,ok
+columbia,ESG Today,67,ok
+boohoo,ESG News,13,ok
+boohoo,ESG Dive,1,ok
+boohoo,ESG Today,7,ok
+under armour,ESG News,8,ok
+under armour,ESG Dive,3,ok
+under armour,ESG Today,5,ok

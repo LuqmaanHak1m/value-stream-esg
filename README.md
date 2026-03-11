@@ -1,36 +1,43 @@
-# ESG News Scraper
+# Value Stream ESG Pipeline
 
-This project scrapes ESG-related news articles about specific companies from multiple ESG news websites and aggregates the results into a single dataset.
+An automated pipeline that collects ESG-related news articles about major companies, stores them in a database, and classifies their ESG impact using an LLM.
 
-Currently supported sources:
-
-- ESG News
-- ESG Dive
-- ESG Today
-
-The scraper collects:
-
-- company name
-- source
-- article title
-- introduction snippet
-- publication date
-- article URL
-
-All results are combined into a single CSV file, and a log file summarises the run.
+The pipeline runs in Google Cloud as a scheduled **Cloud Run Job**.
 
 ---
 
-# Features
+# Overview
 
-- Async scraping using Playwright
-- Modular scraper architecture
-- Multiple sources supported
-- Per-run logging with timestamp
-- CSV export of all scraped articles
-- Error reporting
-- Site-specific parsing rules
-- Shared scraping framework for easy extension
+The system performs three main tasks:
+
+1. **Scrape ESG news articles**
+2. **Store articles in a database**
+3. **Score ESG sentiment using an LLM**
+
+The pipeline is designed to avoid duplicate work:
+
+- Articles are only inserted if they do not already exist.
+- Articles are only scored if they do not already have an LLM score.
+
+---
+
+# Architecture
+
+```
+Cloud Scheduler
+      │
+      ▼
+Cloud Run Job
+      │
+      ▼
+run_pipeline.py
+      │
+      ├── Scrape ESG news articles
+      │       └── Insert into database
+      │
+      └── Score unclassified articles
+              └── Save ESG scores
+```
 
 ---
 
@@ -39,293 +46,231 @@ All results are combined into a single CSV file, and a log file summarises the r
 ```
 value-stream-esg/
 │
-├── run_scrapers.py
+├── db/
+│   ├── connection.py
+│   ├── articles.py
+│   ├── article_scores.py
+│   └── esg_scores.py
+│
+├── pipelines/
+│   ├── scrape_articles.py
+│   └── batch_scorer.py
 │
 ├── scrapers/
-│   ├── base_scraper.py
-│   ├── parsing.py
-│   ├── browser.py
-│   ├── logging_utils.py
-│   └── news_scrapers.py
+│   └── article_scraper/
+│       └── news_scrapers.py
+│       └── base_scraper.py
+│       └── browser.py
+│       └── logging_utils.py
+│       └── parsing.py
+│       
+├── llm/
+│   └── score_articles.py
 │
-├── outputs/
-│   └── (generated CSV files)
+├── run_pipeline.py
 │
-├── logs/
-│   └── (run summary logs)
-│
+├── requirements.txt
 └── README.md
 ```
 
 ---
 
-# Scraper Architecture
+# Pipeline Steps
 
-The framework uses a modular mixin-based architecture.
+## 1. Article Scraping
 
-## BaseScraper
+The scraper collects articles from several ESG news sources.
 
-The main orchestration class that controls:
+Sources currently implemented:
 
-- browser lifecycle
-- pagination
-- article parsing workflow
-- dataframe creation
+- ESG News
+- ESG Dive
+- ESG Today
 
-```
-BaseScraper
- ├── LoggerMixin
- ├── BrowserMixin
- └── ParsingMixin
-```
+Articles are scraped for a list of companies and stored in the `articles` table.
 
----
+Each article includes:
 
-# Mixins
+- company name
+- title
+- introduction
+- publication date
+- source
+- URL
 
-## BrowserMixin
-
-Handles Playwright browser operations.
-
-Responsibilities:
-
-- starting the browser
-- opening pages
-- retrieving HTML
-- closing browser sessions
+Duplicates are prevented using a unique constraint on the article URL.
 
 ---
 
-## ParsingMixin
+## 2. Article Scoring (LLM)
 
-Handles extraction of data from HTML.
+Articles are classified using an LLM via **OpenRouter**.
 
-Functions include:
+The model assigns sentiment scores for ESG categories.
 
-- finding article containers
-- extracting titles
-- extracting links
-- parsing dates
-- extracting introduction text
-- pagination handling
+Environmental categories:
 
----
+- climate_transition
+- energy_resource
+- biodiversity
+- water_use
+- waste_pollution
 
-## LoggerMixin
+Social categories:
 
-Handles structured console logging during scraping.
+- labour_relations
+- health_safety
+- human_rights_community
 
-Example output:
+Governance categories:
 
-```
-[14:07:14] Starting scrape
-[14:07:15] Fetching page
-[14:07:20] Found 20 articles
-[14:07:21] Saved article
-```
+- board_management
+- shareholder_rights
+- conduct_anti_corruption
+- tax_transparency_accounting
 
----
+Each category receives a score between **-2 and +2**.
 
-# Site-Specific Scrapers
-
-Each website gets a small subclass defining selectors and search behaviour.
-
-Example:
-
-```
-class ESGDiveScraper(BaseScraper):
-```
-
-Responsibilities:
-
-- search URL format
-- CSS selectors
-- pagination logic if needed
+Scores are stored in the `article_scores` table.
 
 ---
 
-# Supported Websites
+# Database
 
-## ESG News
+The pipeline writes to a PostgreSQL database.
 
-```
-https://esgnews.com
-```
+Main tables:
 
-Example search:
+### `articles`
 
-```
-https://esgnews.com/?s=nike
-```
+Stores scraped articles.
 
-Sorted by newest.
+Columns include:
 
----
-
-## ESG Dive
-
-```
-https://www.esgdive.com
-```
-
-Example search:
-
-```
-https://www.esgdive.com/search/?q=nike
-```
-
-Pagination handled via a Next button.
+- article_id
+- company_name
+- source
+- title
+- introduction
+- published_at
+- url
 
 ---
 
-## ESG Today
+### `article_scores`
 
-```
-https://www.esgtoday.com
-```
+Stores ESG classifications produced by the LLM.
 
-Example search:
+Columns include:
 
-```
-https://www.esgtoday.com/?s=nike
-```
-
-Pagination handled via numbered pages.
-
----
-
-# Running the Scraper
-
-Run the scraper with:
-
-```
-python run_scrapers.py
-```
-
-The script will:
-
-1. search all companies
-2. scrape all supported sites
-3. merge results
-4. export CSV
-5. generate run logs
+- article_id
+- environmental
+- social
+- governance
+- individual ESG category scores
+- llm_provider
+- llm_model
+- prompt_version
 
 ---
 
-# Configuring Companies
+### `esg_scores`
 
-Edit the list in `run_scrapers.py`:
-
-```python
-COMPANY_NAMES = [
-    "nike",
-    "adidas",
-    "puma",
-]
-```
+Stores ESG ratings scraped from company disclosures (e.g. LSEG).
 
 ---
 
-# Output Files
+# Running Locally
 
-Each run generates timestamped files.
+Create a virtual environment:
 
-Example:
-
+```bash
+python -m venv venv
+source venv/bin/activate
 ```
-outputs/all_esg_articles_20260310_153210.csv
-outputs/scrape_summary_20260310_153210.csv
-outputs/scrape_errors_20260310_153210.csv
-
-logs/scrape_run_20260310_153210.log
-```
-
----
-
-# Example CSV Output
-
-| company_name | source | title | introduction | date | url |
-|---|---|---|---|---|---|
-| nike | ESG News | Nike appoints CSO | Nike has appointed... | 2026-03-04 | https://... |
-
----
-
-# Log File Example
-
-```
-Run started: 2026-03-10 15:32
-Run finished: 2026-03-10 15:35
-
-Companies scraped:
-nike, adidas, puma
-
-Results by company and source:
-nike | ESG News | 12 rows
-nike | ESG Dive | 19 rows
-nike | ESG Today | 9 rows
-
-Total rows: 87
-```
-
----
-
-# Requirements
-
-Python 3.10+
 
 Install dependencies:
 
-```
-pip install playwright pandas beautifulsoup4
+```bash
+pip install -r requirements.txt
 ```
 
-Then install browsers:
-
-```
+run
+```bash
 playwright install
 ```
+
+Set environment variables:
+
+```
+DATABASE_URL=postgres://...
+OPENROUTER_API_KEY=...
+OPENROUTER_BASE_URL=https://openrouter.ai/api/v1
+```
+
+Run the full pipeline:
+
+```bash
+python run_pipeline.py
+```
+
+---
+
+# Deployment
+
+The pipeline runs in **Google Cloud Run Jobs**.
+
+Steps:
+
+1. Build container
+
+```bash
+gcloud builds submit --tag gcr.io/<PROJECT_ID>/value-stream-esg
+```
+
+2. Create job
+
+```bash
+gcloud run jobs create esg-pipeline \
+  --image gcr.io/<PROJECT_ID>/value-stream-esg \
+  --region europe-west3
+```
+
+3. Execute manually
+
+```bash
+gcloud run jobs execute esg-pipeline --region europe-west3
+```
+
+4. Schedule execution using **Cloud Scheduler**.
+
+Example cron schedule:
+
+```
+0 3 1 * *
+```
+
+Runs 1st day of month at 03:00
+
+---
+
+# Environment Variables
+
+The job requires the following environment variables:
+
+```
+DATABASE_URL
+OPENROUTER_API_KEY
+OPENROUTER_BASE_URL
+```
+
+These should be configured in **Cloud Run Job → Variables & Secrets**.
 
 ---
 
 # Future Improvements
 
-Potential improvements:
+Possible improvements include:
 
-- parallel scraping across sources
-- deduplication of identical articles
-- better rate limiting
-- additional ESG news sources
-- database storage instead of CSV
-- scheduling automated daily runs
-- NLP analysis of ESG sentiment
-
----
-
-# Adding a New News Source
-
-To add a new site:
-
-1. create a new scraper class
-
-```
-class NewSiteScraper(BaseScraper):
-```
-
-2. define selectors
-
-```
-results_article_selector
-title_selector
-link_selector
-date_selector
-```
-
-3. implement `build_search_url()`
-
-4. add it to the scraper list in `run_scrapers.py`
-
----
-
-# License
-
-MIT License
+- parallel scraping
+- article deduplication via text similarity
