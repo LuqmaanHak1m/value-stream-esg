@@ -2,6 +2,7 @@ import os
 import json
 from openai import OpenAI
 from dotenv import load_dotenv
+import time
 
 load_dotenv()
 
@@ -74,23 +75,8 @@ def submit_esg_scores(**kwargs):
 def score_article(company, title, paragraph,
                   market_cap="unknown",
                   employees="unknown",
-                  countries="unknown"):
-    """
-    Score the ESG impact of a news article for a company using an LLM.
-
-    The function sends the article title and first paragraph to a model that
-    evaluates ESG-related impacts and returns structured scores (–2.0 to +2.0)
-    via the `submit_esg_scores` tool.
-
-    Usage:
-        scores = score_article(
-            company="Tesla",
-            title="Workers strike at Berlin Gigafactory",
-            paragraph="Employees at Tesla's Berlin plant walked out today..."
-        )
-
-    Returns a dictionary of ESG categories and their impact scores.
-    """
+                  countries="unknown",
+                  max_retries=3):
 
     system_prompt = f"""
 You are an ESG analyst scoring the impact of news articles.
@@ -103,49 +89,23 @@ Employees: {employees}
 Countries of operation: {countries}
 
 SCORING PRINCIPLES
-
 Scores range from -2.0 to +2.0
 
 Severity scale (for large companies):
-
 0.1-0.5 → minor impact
-(single facility issue, small fine)
-
 0.6-1.0 → moderate impact
-(regional issue, several facilities)
-
 1.1-2.0 → major impact
-(company-wide change, large policy shift)
-
-Examples:
-
-Example 1
-Article: "Tesla workers strike at Berlin gigafactory"
-
-Correct scores:
-labour_relations: -0.6
-health_safety: -0.4
-
-Reason:
-single facility strike → minor impact for global company
-
-Example 2
-Article: "Microsoft announces company-wide carbon neutrality"
-
-Correct scores:
-climate_transition: 1.2
-energy_resource: 0.6
-
-Reason:
-large environmental commitment but incremental progress
 
 RULES
-
 • Score ONLY categories mentioned in the article
 • Score ONLY categories that have changed
 • Avoid extreme scores unless the impact affects the whole corporation
 • You MUST call the tool submit_esg_scores
 • Do not explain reasoning
+
+When calling the tool:
+• Return ONLY valid JSON arguments
+• Do NOT include XML tags or extra text
 """
 
     messages = [
@@ -162,19 +122,35 @@ First Paragraph:
 """}
     ]
 
-    response = chat_client.chat.completions.create(
-        model="anthropic/claude-3.5-haiku",
-        messages=messages,
-        tools=tools,
-        tool_choice="required",
-        temperature=0
-    )
+    for attempt in range(max_retries):
+        print(attempt)
 
-    tool_call = response.choices[0].message.tool_calls[0]
+        response = chat_client.chat.completions.create(
+            model="google/gemini-3-flash-preview",
+            messages=messages,
+            tools=tools,
+            tool_choice="required",
+            temperature=0
+        )
 
-    args = json.loads(tool_call.function.arguments)
+        try:
+            tool_call = response.choices[0].message.tool_calls[0]
+            raw_args = tool_call.function.arguments
 
-    return submit_esg_scores(**args)
+            print(raw_args)
+
+            args = json.loads(raw_args)
+
+            print(args)
+
+            return submit_esg_scores(**args)
+
+        except json.JSONDecodeError:
+            print(f"⚠️ JSON parse failed. Retrying... ({attempt+1}/{max_retries})")
+            time.sleep(1)
+
+    # If all retries fail
+    raise ValueError("LLM returned invalid JSON after all retries.")
 
 
 # -------------------------------------------------
