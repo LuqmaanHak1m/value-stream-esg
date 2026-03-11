@@ -2,7 +2,11 @@ import asyncio
 import argparse
 import time
 import sys
+import os
 from playwright.async_api import async_playwright, TimeoutError as PlaywrightTimeoutError
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+PAGE_FILE = os.path.join(BASE_DIR, "page.html")
 
 
 async def scrape(
@@ -22,13 +26,16 @@ async def scrape(
             if verbose:
                 print(f"[webscrape] Attempt {attempt}/{retries}: {url}", file=sys.stderr)
 
+            # delete stale html
+            if os.path.exists(PAGE_FILE):
+                os.remove(PAGE_FILE)
+
             async with async_playwright() as p:
                 browser = await p.chromium.launch(headless=True)
                 page = await browser.new_page()
 
                 await page.goto(url, wait_until="domcontentloaded", timeout=timeout)
 
-                # give JS a moment even after domcontentloaded
                 await page.wait_for_timeout(3000)
 
                 if wait and selector:
@@ -36,11 +43,10 @@ async def scrape(
 
                 html = await page.content()
 
-                # extra validation: did the ESG block really appear?
                 if selector and selector not in html:
                     raise RuntimeError("Page loaded but target selector content not found in HTML")
 
-                with open("page.html", "w", encoding="utf-8") as f:
+                with open(PAGE_FILE, "w", encoding="utf-8") as f:
                     f.write(html)
 
                 return
