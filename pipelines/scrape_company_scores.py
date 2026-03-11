@@ -1,21 +1,33 @@
 import asyncio
+
+from pathlib import Path
 from urllib.parse import quote_plus
 
 import pandas as pd
+
 from bs4 import BeautifulSoup
-from playwright.async_api import async_playwright
-import os
-from datetime import datetime, timezone
-from supabase import create_client, Client
 from dotenv import load_dotenv
-import os
-import psycopg2
-from psycopg2.extras import execute_values
+from playwright.async_api import async_playwright
+
+from db.esg_scores import upsert_esg_scores
 
 load_dotenv()
 
 
-name_map = {
+# -----------------------------------------------------------------------------
+# Paths
+# -----------------------------------------------------------------------------
+BASE_DIR = Path(__file__).resolve().parents[1]
+OUTPUT_DIR = BASE_DIR / "outputs" / "company_scores"
+OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+
+OUTPUT_FILE = OUTPUT_DIR / "esg_scores.csv"
+
+
+# -----------------------------------------------------------------------------
+# Constants
+# -----------------------------------------------------------------------------
+NAME_MAP = {
     "Adidas": "Adidas AG",
     "Nike": "Nike Inc",
     "Puma": "Puma SE",
@@ -29,9 +41,13 @@ name_map = {
     "Under Armour": "Under Armour Inc",
 }
 
-site = "https://www.lseg.com/en/data-analytics/sustainable-finance/sustainability-ratings-and-data"
+
+BASE_SITE = "https://www.lseg.com/en/data-analytics/sustainable-finance/sustainability-ratings-and-data"
 
 
+# -----------------------------------------------------------------------------
+# Scraping helpers
+# -----------------------------------------------------------------------------
 async def get_html(
     url: str,
     selector: str | None = None,
@@ -66,8 +82,8 @@ async def get_html(
 
 
 async def build_esg_data(esg_data: dict, company_name: str) -> dict:
-    encoded_name = quote_plus(name_map[company_name])
-    full_site_link = f"{site}?esg={encoded_name}"
+    encoded_name = quote_plus(NAME_MAP[company_name])
+    full_site_link = f"{BASE_SITE}?esg={encoded_name}"
     print(full_site_link)
 
     soup = await get_html(
@@ -108,8 +124,8 @@ async def build_esg_data(esg_data: dict, company_name: str) -> dict:
 
         for sub_cat in sub_cats:
             text = sub_cat.get_text(" ", strip=True)
-
             parts = text.rsplit(" ", 1)
+
             if len(parts) != 2:
                 continue
 
@@ -126,14 +142,16 @@ def build_dataframe(esg_data: dict) -> pd.DataFrame:
         industry = categories.get("industry")
 
         if "error" in categories:
-            rows.append({
-                "company": company,
-                "industry": None,
-                "category": None,
-                "metric": None,
-                "score": None,
-                "error": categories["error"],
-            })
+            rows.append(
+                {
+                    "company": company,
+                    "industry": None,
+                    "category": None,
+                    "metric": None,
+                    "score": None,
+                    "error": categories["error"],
+                }
+            )
             continue
 
         for category, metrics in categories.items():
@@ -141,88 +159,23 @@ def build_dataframe(esg_data: dict) -> pd.DataFrame:
                 continue
 
             for metric, score in metrics.items():
-                rows.append({
-                    "company": company,
-                    "industry": industry,
-                    "category": category,
-                    "metric": metric,
-                    "score": score,
-                    "error": None,
-                })
+                rows.append(
+                    {
+                        "company": company,
+                        "industry": industry,
+                        "category": category,
+                        "metric": metric,
+                        "score": score,
+                        "error": None,
+                    }
+                )
 
     return pd.DataFrame(rows)
 
-def get_db_connection():
-    database_url = os.getenv("DATABASE_URL")
-    if not database_url:
-        raise RuntimeError("DATABASE_URL not found in .env")
-    return psycopg2.connect(database_url)
 
-
-def df_to_records(df: pd.DataFrame) -> list[tuple]:
-    scraped_at = datetime.now(timezone.utc)
-    records = []
-
-    for _, row in df.iterrows():
-        if pd.notna(row.get("error")):
-            continue
-
-        company = None if pd.isna(row.get("company")) else row.get("company")
-        industry = None if pd.isna(row.get("industry")) else row.get("industry")
-        category = None if pd.isna(row.get("category")) else row.get("category")
-        metric = None if pd.isna(row.get("metric")) else row.get("metric")
-
-        score = row.get("score")
-        if pd.isna(score):
-            score = None
-        else:
-            score = float(score)
-
-        records.append((
-            company,
-            industry,
-            category,
-            metric,
-            score,
-            "LSEG",
-            scraped_at,
-        ))
-
-    return records
-
-
-def upsert_esg_scores(df: pd.DataFrame) -> None:
-    records = df_to_records(df)
-
-    if not records:
-        print("No valid ESG records to upsert.")
-        return
-
-    query = """
-        INSERT INTO public.esg_scores
-            (company, industry, category, metric, score, source, scraped_at)
-        VALUES %s
-        ON CONFLICT (company, category, metric, source)
-        DO UPDATE SET
-            industry = EXCLUDED.industry,
-            score = EXCLUDED.score,
-            scraped_at = EXCLUDED.scraped_at,
-            updated_at = now()
-    """
-
-    conn = get_db_connection()
-    try:
-        with conn:
-            with conn.cursor() as cur:
-                execute_values(cur, query, records, page_size=500)
-        print(f"Upserted {len(records)} rows into esg_scores")
-    finally:
-        conn.close()
-
-
-
-
-
+# -----------------------------------------------------------------------------
+# Pipeline
+# -----------------------------------------------------------------------------
 async def scrape_round(companies, esg_data, delay_between_companies=2):
     failed = []
 
@@ -243,7 +196,7 @@ async def main():
     esg_data = {}
 
     print("\n=== ROUND 1 ===")
-    esg_data, failed = await scrape_round(name_map.keys(), esg_data, delay_between_companies=2)
+    esg_data, failed = await scrape_round(NAME_MAP.keys(), esg_data, delay_between_companies=2)
 
     if failed:
         print(f"\nSleeping before retry round 2... ({len(failed)} failures)")
@@ -268,11 +221,12 @@ async def main():
 
     df = build_dataframe(esg_data)
     print(df)
-    df.to_csv("esg_scores.csv", index=False)
-    print("\nSaved to esg_scores.csv")
+
+    df.to_csv(OUTPUT_FILE, index=False)
+    print(f"\nSaved to {OUTPUT_FILE}")
 
     upsert_esg_scores(df)
-    print("\nUpserted ESG data to Supabase")
+    print("\nUpserted ESG data to database")
 
     if final_failed:
         print("\nStill failed:")

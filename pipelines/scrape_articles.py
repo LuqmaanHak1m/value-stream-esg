@@ -1,10 +1,23 @@
 import asyncio
-from pathlib import Path
 from datetime import datetime
+from pathlib import Path
 
 import pandas as pd
 
-from scrapers.news_scrapers import ESGNewsScraper, ESGDiveScraper, ESGTodayScraper
+from db.articles import upsert_articles
+from scrapers.article_scraper.news_scrapers import (
+    ESGDiveScraper,
+    ESGNewsScraper,
+    ESGTodayScraper,
+)
+
+
+BASE_DIR = Path(__file__).resolve().parents[1]
+OUTPUT_DIR = BASE_DIR / "outputs" / "articles"
+LOG_DIR = BASE_DIR / "logs"
+
+OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+LOG_DIR.mkdir(parents=True, exist_ok=True)
 
 
 COMPANY_NAMES = [
@@ -12,20 +25,20 @@ COMPANY_NAMES = [
     "adidas",
     "puma",
     "lululemon",
-    "h & m",
     "jd sports",
-    "gap",
     "burberry",
     "columbia",
     "boohoo",
-    "under armour"
+    "under armour",
 ]
 
-OUTPUT_DIR = Path("outputs")
-LOG_DIR = Path("logs")
 
-
-async def scrape_all(companies, past_x_years=3, search_keywords="", verbose=True):
+async def scrape_all(
+    companies: list[str],
+    past_x_years: int = 3,
+    search_keywords: str = "",
+    verbose: bool = True,
+) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     scrapers = [
         ESGNewsScraper(verbose=verbose),
         ESGDiveScraper(verbose=verbose),
@@ -62,7 +75,7 @@ async def scrape_all(companies, past_x_years=3, search_keywords="", verbose=True
 
                 if df is not None and not df.empty:
                     all_dfs.append(df)
-                    print(f"Saved {row_count} rows from {scraper.source} for {company_name}")
+                    print(f"Collected {row_count} rows from {scraper.source} for {company_name}")
                 else:
                     print(f"No rows found for {company_name} on {scraper.source}")
 
@@ -89,7 +102,7 @@ async def scrape_all(companies, past_x_years=3, search_keywords="", verbose=True
                 print(f"Failed for {company_name} on {scraper.source}: {error_message}")
 
     if all_dfs:
-        combined_df = pd.concat(all_dfs, ignore_index=True)
+        combined_df = pd.concat(all_dfs, ignore_index=True).drop_duplicates(subset=["url"])
     else:
         combined_df = pd.DataFrame(
             columns=["company_name", "source", "title", "introduction", "date", "url"]
@@ -102,33 +115,40 @@ async def scrape_all(companies, past_x_years=3, search_keywords="", verbose=True
 
 
 def write_run_log(
-    log_path,
-    companies,
-    summary_df,
-    errors_df,
-    combined_df,
-    output_csv_path,
-    started_at,
-    finished_at,
-    past_x_years,
-    search_keywords,
-):
+    log_path: Path,
+    companies: list[str],
+    summary_df: pd.DataFrame,
+    errors_df: pd.DataFrame,
+    combined_df: pd.DataFrame,
+    output_csv_path: Path,
+    summary_csv_path: Path,
+    error_csv_path: Path | None,
+    started_at: datetime,
+    finished_at: datetime,
+    past_x_years: int,
+    search_keywords: str,
+    db_rows_upserted: int,
+) -> None:
     total_runtime = finished_at - started_at
 
-    lines = []
-    lines.append(f"Run started: {started_at.isoformat()}")
-    lines.append(f"Run finished: {finished_at.isoformat()}")
-    lines.append(f"Duration: {total_runtime}")
-    lines.append("")
-    lines.append(f"Companies scraped: {', '.join(companies)}")
-    lines.append(f"Search keywords: {search_keywords!r}")
-    lines.append(f"Past X years: {past_x_years}")
-    lines.append("")
-    lines.append(f"Combined CSV output: {output_csv_path}")
-    lines.append(f"Total rows in combined dataframe: {len(combined_df)}")
-    lines.append("")
+    lines = [
+        f"Run started: {started_at.isoformat()}",
+        f"Run finished: {finished_at.isoformat()}",
+        f"Duration: {total_runtime}",
+        "",
+        f"Companies scraped: {', '.join(companies)}",
+        f"Search keywords: {search_keywords!r}",
+        f"Past X years: {past_x_years}",
+        "",
+        f"Combined CSV output: {output_csv_path}",
+        f"Summary CSV output: {summary_csv_path}",
+        f"Error CSV output: {error_csv_path if error_csv_path else 'None'}",
+        f"Total rows in combined dataframe: {len(combined_df)}",
+        f"Rows upserted to database: {db_rows_upserted}",
+        "",
+        "Results by company and source:",
+    ]
 
-    lines.append("Results by company and source:")
     if summary_df.empty:
         lines.append("  No scraper results recorded.")
     else:
@@ -140,8 +160,7 @@ def write_run_log(
                 f"status={row['status']}"
             )
 
-    lines.append("")
-    lines.append("Totals by source:")
+    lines.extend(["", "Totals by source:"])
     if summary_df.empty:
         lines.append("  No totals available.")
     else:
@@ -153,8 +172,7 @@ def write_run_log(
         for _, row in source_totals.iterrows():
             lines.append(f"  - {row['source']}: {row['rows_returned']} rows")
 
-    lines.append("")
-    lines.append("Totals by company:")
+    lines.extend(["", "Totals by company:"])
     if summary_df.empty:
         lines.append("  No totals available.")
     else:
@@ -166,8 +184,7 @@ def write_run_log(
         for _, row in company_totals.iterrows():
             lines.append(f"  - {row['company_name']}: {row['rows_returned']} rows")
 
-    lines.append("")
-    lines.append("Errors:")
+    lines.extend(["", "Errors:"])
     if errors_df.empty:
         lines.append("  None")
     else:
@@ -181,10 +198,7 @@ def write_run_log(
     log_path.write_text("\n".join(lines), encoding="utf-8")
 
 
-async def main():
-    OUTPUT_DIR.mkdir(exist_ok=True)
-    LOG_DIR.mkdir(exist_ok=True)
-
+async def main() -> None:
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 
     output_csv_path = OUTPUT_DIR / f"all_esg_articles_{timestamp}.csv"
@@ -209,8 +223,12 @@ async def main():
     combined_df.to_csv(output_csv_path, index=False)
     summary_df.to_csv(summary_csv_path, index=False)
 
+    saved_error_csv_path = None
     if not errors_df.empty:
         errors_df.to_csv(error_csv_path, index=False)
+        saved_error_csv_path = error_csv_path
+
+    db_rows_upserted = upsert_articles(combined_df)
 
     write_run_log(
         log_path=log_path,
@@ -219,25 +237,25 @@ async def main():
         errors_df=errors_df,
         combined_df=combined_df,
         output_csv_path=output_csv_path,
+        summary_csv_path=summary_csv_path,
+        error_csv_path=saved_error_csv_path,
         started_at=started_at,
         finished_at=finished_at,
         past_x_years=past_x_years,
         search_keywords=search_keywords,
+        db_rows_upserted=db_rows_upserted,
     )
-
-    pd.set_option("display.max_columns", None)
-    pd.set_option("display.width", None)
-    pd.set_option("display.max_colwidth", None)
 
     print("\n=== Combined DataFrame Preview ===")
     print(combined_df.head())
 
     print(f"\nSaved combined CSV to: {output_csv_path}")
     print(f"Saved summary CSV to: {summary_csv_path}")
-    if not errors_df.empty:
-        print(f"Saved error CSV to: {error_csv_path}")
+    if saved_error_csv_path is not None:
+        print(f"Saved error CSV to: {saved_error_csv_path}")
     print(f"Saved run log to: {log_path}")
     print(f"Total rows: {len(combined_df)}")
+    print(f"Rows upserted to database: {db_rows_upserted}")
 
 
 if __name__ == "__main__":
