@@ -11,6 +11,14 @@ COMPANY_NAMES = [
     "nike",
     "adidas",
     "puma",
+    "lululemon",
+    "h & m",
+    "jd sports",
+    "gap",
+    "burberry",
+    "columbia",
+    "boohoo",
+    "under armour"
 ]
 
 OUTPUT_DIR = Path("outputs")
