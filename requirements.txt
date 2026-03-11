@@ -1,0 +1,4 @@
+supabase 
+pandas 
+beautifulsoup4 
+playwright

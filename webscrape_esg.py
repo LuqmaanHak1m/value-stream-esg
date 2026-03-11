@@ -4,6 +4,15 @@ from urllib.parse import quote_plus
 import pandas as pd
 from bs4 import BeautifulSoup
 from playwright.async_api import async_playwright
+import os
+from datetime import datetime, timezone
+from supabase import create_client, Client
+from dotenv import load_dotenv
+import os
+import psycopg2
+from psycopg2.extras import execute_values
+
+load_dotenv()
 
 
 name_map = {
@@ -143,6 +152,76 @@ def build_dataframe(esg_data: dict) -> pd.DataFrame:
 
     return pd.DataFrame(rows)
 
+def get_db_connection():
+    database_url = os.getenv("DATABASE_URL")
+    if not database_url:
+        raise RuntimeError("DATABASE_URL not found in .env")
+    return psycopg2.connect(database_url)
+
+
+def df_to_records(df: pd.DataFrame) -> list[tuple]:
+    scraped_at = datetime.now(timezone.utc)
+    records = []
+
+    for _, row in df.iterrows():
+        if pd.notna(row.get("error")):
+            continue
+
+        company = None if pd.isna(row.get("company")) else row.get("company")
+        industry = None if pd.isna(row.get("industry")) else row.get("industry")
+        category = None if pd.isna(row.get("category")) else row.get("category")
+        metric = None if pd.isna(row.get("metric")) else row.get("metric")
+
+        score = row.get("score")
+        if pd.isna(score):
+            score = None
+        else:
+            score = float(score)
+
+        records.append((
+            company,
+            industry,
+            category,
+            metric,
+            score,
+            "LSEG",
+            scraped_at,
+        ))
+
+    return records
+
+
+def upsert_esg_scores(df: pd.DataFrame) -> None:
+    records = df_to_records(df)
+
+    if not records:
+        print("No valid ESG records to upsert.")
+        return
+
+    query = """
+        INSERT INTO public.esg_scores
+            (company, industry, category, metric, score, source, scraped_at)
+        VALUES %s
+        ON CONFLICT (company, category, metric, source)
+        DO UPDATE SET
+            industry = EXCLUDED.industry,
+            score = EXCLUDED.score,
+            scraped_at = EXCLUDED.scraped_at,
+            updated_at = now()
+    """
+
+    conn = get_db_connection()
+    try:
+        with conn:
+            with conn.cursor() as cur:
+                execute_values(cur, query, records, page_size=500)
+        print(f"Upserted {len(records)} rows into esg_scores")
+    finally:
+        conn.close()
+
+
+
+
 
 async def scrape_round(companies, esg_data, delay_between_companies=2):
     failed = []
@@ -163,11 +242,9 @@ async def scrape_round(companies, esg_data, delay_between_companies=2):
 async def main():
     esg_data = {}
 
-    # round 1
     print("\n=== ROUND 1 ===")
     esg_data, failed = await scrape_round(name_map.keys(), esg_data, delay_between_companies=2)
 
-    # round 2
     if failed:
         print(f"\nSleeping before retry round 2... ({len(failed)} failures)")
         await asyncio.sleep(15)
@@ -177,7 +254,6 @@ async def main():
     else:
         failed_round_2 = []
 
-    # round 3
     if failed_round_2:
         print(f"\nSleeping before retry round 3... ({len(failed_round_2)} failures)")
         await asyncio.sleep(30)
@@ -193,8 +269,11 @@ async def main():
     df = build_dataframe(esg_data)
     print(df)
     df.to_csv("esg_scores.csv", index=False)
-
     print("\nSaved to esg_scores.csv")
+
+    upsert_esg_scores(df)
+    print("\nUpserted ESG data to Supabase")
+
     if final_failed:
         print("\nStill failed:")
         for company in final_failed:
