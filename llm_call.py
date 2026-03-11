@@ -75,6 +75,22 @@ def score_article(company, title, paragraph,
                   market_cap="unknown",
                   employees="unknown",
                   countries="unknown"):
+    """
+    Score the ESG impact of a news article for a company using an LLM.
+
+    The function sends the article title and first paragraph to a model that
+    evaluates ESG-related impacts and returns structured scores (–2.0 to +2.0)
+    via the `submit_esg_scores` tool.
+
+    Usage:
+        scores = score_article(
+            company="Tesla",
+            title="Workers strike at Berlin Gigafactory",
+            paragraph="Employees at Tesla's Berlin plant walked out today..."
+        )
+
+    Returns a dictionary of ESG categories and their impact scores.
+    """
 
     system_prompt = f"""
 You are an ESG analyst scoring the impact of news articles.
