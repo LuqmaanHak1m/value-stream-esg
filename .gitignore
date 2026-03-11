@@ -45,10 +45,7 @@ Thumbs.db
 
 # Jupyter
 .ipynb_checkpoints
-*.ipynb
 
-# Logs
-*.log
 
 # Testing
 .pytest_cache/
