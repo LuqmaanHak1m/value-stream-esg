@@ -2,62 +2,61 @@ import asyncio
 import argparse
 import time
 import sys
-from playwright.async_api import async_playwright
+from playwright.async_api import async_playwright, TimeoutError as PlaywrightTimeoutError
 
 
-async def scrape(url, selector=None, wait=False, verbose=False):
-    start = time.time()
+async def scrape(
+    url,
+    selector=None,
+    wait=False,
+    verbose=False,
+    retries=4,
+    timeout=10000,
+    retry_delay=2
+):
+    last_error = None
 
-    if verbose:
-        print(f"[webscrape] Starting browser for: {url}", file=sys.stderr)
-
-    async with async_playwright() as p:
-        browser = await p.chromium.launch(headless=True)
-
-        if verbose:
-            print(f"[webscrape] Browser launched", file=sys.stderr)
-
-        page = await browser.new_page()
-
-        if verbose:
-            print(f"[webscrape] Navigating to: {url}", file=sys.stderr)
-
-        await page.goto(url, wait_until="domcontentloaded")
-
-        if wait and selector:
+    for attempt in range(1, retries + 1):
+        browser = None
+        try:
             if verbose:
-                print(f"[webscrape] Waiting for selector: {selector}", file=sys.stderr)
-            await page.wait_for_selector(selector, timeout=15000)
+                print(f"[webscrape] Attempt {attempt}/{retries}: {url}", file=sys.stderr)
 
-        html = await page.content()
+            async with async_playwright() as p:
+                browser = await p.chromium.launch(headless=True)
+                page = await browser.new_page()
 
-        if verbose:
-            print(f"[webscrape] Writing page.html", file=sys.stderr)
+                await page.goto(url, wait_until="domcontentloaded", timeout=timeout)
 
-        with open("page.html", "w", encoding="utf-8") as f:
-            f.write(html)
+                # give JS a moment even after domcontentloaded
+                await page.wait_for_timeout(3000)
 
-        await browser.close()
+                if wait and selector:
+                    await page.wait_for_selector(selector, timeout=timeout)
 
-    elapsed = time.time() - start
-    if verbose:
-        print(f"[webscrape] Finished in {elapsed:.2f}s", file=sys.stderr)
+                html = await page.content()
 
+                # extra validation: did the ESG block really appear?
+                if selector and selector not in html:
+                    raise RuntimeError("Page loaded but target selector content not found in HTML")
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--url", required=True)
-    parser.add_argument("--selector", default=None)
-    parser.add_argument("--wait", action="store_true")
-    parser.add_argument("--verbose", action="store_true")
+                with open("page.html", "w", encoding="utf-8") as f:
+                    f.write(html)
 
-    args = parser.parse_args()
+                return
 
-    asyncio.run(
-        scrape(
-            args.url,
-            selector=args.selector,
-            wait=args.wait,
-            verbose=args.verbose
-        )
-    )
+        except Exception as e:
+            last_error = e
+            print(f"[webscrape] Attempt {attempt} failed: {e}", file=sys.stderr)
+
+        finally:
+            if browser:
+                try:
+                    await browser.close()
+                except Exception:
+                    pass
+
+        if attempt < retries:
+            await asyncio.sleep(retry_delay)
+
+    raise RuntimeError(f"Failed after {retries} attempts for {url}. Last error: {last_error}")

@@ -1,31 +1,166 @@
-company,category,metric,score
-Adidas,Environmental,Environmental,3.2
-Adidas,Environmental,Climate Transition,5
-Adidas,Environmental,Energy & Resource Use,3
-Adidas,Environmental,Biodiversity,4
-Adidas,Environmental,Water Use,1
-Adidas,Environmental,Waste & Pollution,2
-Adidas,Social,Social,3.8
-Adidas,Social,Labour Reations,4
-Adidas,Social,Health & Safety,3
-Adidas,Social,Human Rights & Community,5
-Adidas,Governance,Governance,3.5
-Adidas,Governance,Board & Management,3
-Adidas,Governance,Shareholder Rights,4
-Adidas,Governance,Conduct & Anti-Corruption,4
-Adidas,Governance,Tax Transperancy & Accounting,3
-Nike,Environmental,Environmental,3.3
-Nike,Environmental,Climate Transition,5
-Nike,Environmental,Energy & Resource Use,3
-Nike,Environmental,Biodiversity,1
-Nike,Environmental,Water Use,3
-Nike,Environmental,Waste & Pollution,3
-Nike,Social,Social,2.1
-Nike,Social,Labour Reations,3
-Nike,Social,Health & Safety,1
-Nike,Social,Human Rights & Community,2
-Nike,Governance,Governance,3.8
-Nike,Governance,Board & Management,3
-Nike,Governance,Shareholder Rights,5
-Nike,Governance,Conduct & Anti-Corruption,3
-Nike,Governance,Tax Transperancy & Accounting,3
+company,industry,category,metric,score
+Adidas,Textiles & Apparel,Environmental,Environmental,2.4
+Adidas,Textiles & Apparel,Environmental,Climate Transition,4
+Adidas,Textiles & Apparel,Environmental,Energy & Resource Use,3
+Adidas,Textiles & Apparel,Environmental,Biodiversity,1
+Adidas,Textiles & Apparel,Environmental,Water Use,1
+Adidas,Textiles & Apparel,Environmental,Waste & Pollution,1
+Adidas,Textiles & Apparel,Social,Social,1.6
+Adidas,Textiles & Apparel,Social,Labour Reations,2
+Adidas,Textiles & Apparel,Social,Health & Safety,1
+Adidas,Textiles & Apparel,Social,Human Rights & Community,2
+Adidas,Textiles & Apparel,Governance,Governance,3.1
+Adidas,Textiles & Apparel,Governance,Board & Management,5
+Adidas,Textiles & Apparel,Governance,Shareholder Rights,2
+Adidas,Textiles & Apparel,Governance,Conduct & Anti-Corruption,2
+Adidas,Textiles & Apparel,Governance,Tax Transperancy & Accounting,2
+Nike,Textiles & Apparel,Environmental,Environmental,2.4
+Nike,Textiles & Apparel,Environmental,Climate Transition,4
+Nike,Textiles & Apparel,Environmental,Energy & Resource Use,3
+Nike,Textiles & Apparel,Environmental,Biodiversity,1
+Nike,Textiles & Apparel,Environmental,Water Use,1
+Nike,Textiles & Apparel,Environmental,Waste & Pollution,1
+Nike,Textiles & Apparel,Social,Social,1.6
+Nike,Textiles & Apparel,Social,Labour Reations,2
+Nike,Textiles & Apparel,Social,Health & Safety,1
+Nike,Textiles & Apparel,Social,Human Rights & Community,2
+Nike,Textiles & Apparel,Governance,Governance,3.1
+Nike,Textiles & Apparel,Governance,Board & Management,5
+Nike,Textiles & Apparel,Governance,Shareholder Rights,2
+Nike,Textiles & Apparel,Governance,Conduct & Anti-Corruption,2
+Nike,Textiles & Apparel,Governance,Tax Transperancy & Accounting,2
+Puma,Textiles & Apparel,Environmental,Environmental,2.4
+Puma,Textiles & Apparel,Environmental,Climate Transition,4
+Puma,Textiles & Apparel,Environmental,Energy & Resource Use,3
+Puma,Textiles & Apparel,Environmental,Biodiversity,1
+Puma,Textiles & Apparel,Environmental,Water Use,1
+Puma,Textiles & Apparel,Environmental,Waste & Pollution,1
+Puma,Textiles & Apparel,Social,Social,1.6
+Puma,Textiles & Apparel,Social,Labour Reations,2
+Puma,Textiles & Apparel,Social,Health & Safety,1
+Puma,Textiles & Apparel,Social,Human Rights & Community,2
+Puma,Textiles & Apparel,Governance,Governance,3.1
+Puma,Textiles & Apparel,Governance,Board & Management,5
+Puma,Textiles & Apparel,Governance,Shareholder Rights,2
+Puma,Textiles & Apparel,Governance,Conduct & Anti-Corruption,2
+Puma,Textiles & Apparel,Governance,Tax Transperancy & Accounting,2
+Lululemon,Textiles & Apparel,Environmental,Environmental,2.4
+Lululemon,Textiles & Apparel,Environmental,Climate Transition,4
+Lululemon,Textiles & Apparel,Environmental,Energy & Resource Use,3
+Lululemon,Textiles & Apparel,Environmental,Biodiversity,1
+Lululemon,Textiles & Apparel,Environmental,Water Use,1
+Lululemon,Textiles & Apparel,Environmental,Waste & Pollution,1
+Lululemon,Textiles & Apparel,Social,Social,1.6
+Lululemon,Textiles & Apparel,Social,Labour Reations,2
+Lululemon,Textiles & Apparel,Social,Health & Safety,1
+Lululemon,Textiles & Apparel,Social,Human Rights & Community,2
+Lululemon,Textiles & Apparel,Governance,Governance,3.1
+Lululemon,Textiles & Apparel,Governance,Board & Management,5
+Lululemon,Textiles & Apparel,Governance,Shareholder Rights,2
+Lululemon,Textiles & Apparel,Governance,Conduct & Anti-Corruption,2
+Lululemon,Textiles & Apparel,Governance,Tax Transperancy & Accounting,2
+H & M,Textiles & Apparel,Environmental,Environmental,2.4
+H & M,Textiles & Apparel,Environmental,Climate Transition,4
+H & M,Textiles & Apparel,Environmental,Energy & Resource Use,3
+H & M,Textiles & Apparel,Environmental,Biodiversity,1
+H & M,Textiles & Apparel,Environmental,Water Use,1
+H & M,Textiles & Apparel,Environmental,Waste & Pollution,1
+H & M,Textiles & Apparel,Social,Social,1.6
+H & M,Textiles & Apparel,Social,Labour Reations,2
+H & M,Textiles & Apparel,Social,Health & Safety,1
+H & M,Textiles & Apparel,Social,Human Rights & Community,2
+H & M,Textiles & Apparel,Governance,Governance,3.1
+H & M,Textiles & Apparel,Governance,Board & Management,5
+H & M,Textiles & Apparel,Governance,Shareholder Rights,2
+H & M,Textiles & Apparel,Governance,Conduct & Anti-Corruption,2
+H & M,Textiles & Apparel,Governance,Tax Transperancy & Accounting,2
+JD Sports,Textiles & Apparel,Environmental,Environmental,2.4
+JD Sports,Textiles & Apparel,Environmental,Climate Transition,4
+JD Sports,Textiles & Apparel,Environmental,Energy & Resource Use,3
+JD Sports,Textiles & Apparel,Environmental,Biodiversity,1
+JD Sports,Textiles & Apparel,Environmental,Water Use,1
+JD Sports,Textiles & Apparel,Environmental,Waste & Pollution,1
+JD Sports,Textiles & Apparel,Social,Social,1.6
+JD Sports,Textiles & Apparel,Social,Labour Reations,2
+JD Sports,Textiles & Apparel,Social,Health & Safety,1
+JD Sports,Textiles & Apparel,Social,Human Rights & Community,2
+JD Sports,Textiles & Apparel,Governance,Governance,3.1
+JD Sports,Textiles & Apparel,Governance,Board & Management,5
+JD Sports,Textiles & Apparel,Governance,Shareholder Rights,2
+JD Sports,Textiles & Apparel,Governance,Conduct & Anti-Corruption,2
+JD Sports,Textiles & Apparel,Governance,Tax Transperancy & Accounting,2
+Gap,Textiles & Apparel,Environmental,Environmental,2.4
+Gap,Textiles & Apparel,Environmental,Climate Transition,4
+Gap,Textiles & Apparel,Environmental,Energy & Resource Use,3
+Gap,Textiles & Apparel,Environmental,Biodiversity,1
+Gap,Textiles & Apparel,Environmental,Water Use,1
+Gap,Textiles & Apparel,Environmental,Waste & Pollution,1
+Gap,Textiles & Apparel,Social,Social,1.6
+Gap,Textiles & Apparel,Social,Labour Reations,2
+Gap,Textiles & Apparel,Social,Health & Safety,1
+Gap,Textiles & Apparel,Social,Human Rights & Community,2
+Gap,Textiles & Apparel,Governance,Governance,3.1
+Gap,Textiles & Apparel,Governance,Board & Management,5
+Gap,Textiles & Apparel,Governance,Shareholder Rights,2
+Gap,Textiles & Apparel,Governance,Conduct & Anti-Corruption,2
+Gap,Textiles & Apparel,Governance,Tax Transperancy & Accounting,2
+Burberry,Textiles & Apparel,Environmental,Environmental,2.4
+Burberry,Textiles & Apparel,Environmental,Climate Transition,4
+Burberry,Textiles & Apparel,Environmental,Energy & Resource Use,3
+Burberry,Textiles & Apparel,Environmental,Biodiversity,1
+Burberry,Textiles & Apparel,Environmental,Water Use,1
+Burberry,Textiles & Apparel,Environmental,Waste & Pollution,1
+Burberry,Textiles & Apparel,Social,Social,1.6
+Burberry,Textiles & Apparel,Social,Labour Reations,2
+Burberry,Textiles & Apparel,Social,Health & Safety,1
+Burberry,Textiles & Apparel,Social,Human Rights & Community,2
+Burberry,Textiles & Apparel,Governance,Governance,3.1
+Burberry,Textiles & Apparel,Governance,Board & Management,5
+Burberry,Textiles & Apparel,Governance,Shareholder Rights,2
+Burberry,Textiles & Apparel,Governance,Conduct & Anti-Corruption,2
+Burberry,Textiles & Apparel,Governance,Tax Transperancy & Accounting,2
+Columbia,Textiles & Apparel,Environmental,Environmental,2.4
+Columbia,Textiles & Apparel,Environmental,Climate Transition,4
+Columbia,Textiles & Apparel,Environmental,Energy & Resource Use,3
+Columbia,Textiles & Apparel,Environmental,Biodiversity,1
+Columbia,Textiles & Apparel,Environmental,Water Use,1
+Columbia,Textiles & Apparel,Environmental,Waste & Pollution,1
+Columbia,Textiles & Apparel,Social,Social,1.6
+Columbia,Textiles & Apparel,Social,Labour Reations,2
+Columbia,Textiles & Apparel,Social,Health & Safety,1
+Columbia,Textiles & Apparel,Social,Human Rights & Community,2
+Columbia,Textiles & Apparel,Governance,Governance,3.1
+Columbia,Textiles & Apparel,Governance,Board & Management,5
+Columbia,Textiles & Apparel,Governance,Shareholder Rights,2
+Columbia,Textiles & Apparel,Governance,Conduct & Anti-Corruption,2
+Columbia,Textiles & Apparel,Governance,Tax Transperancy & Accounting,2
+Boohoo,Textiles & Apparel,Environmental,Environmental,2.4
+Boohoo,Textiles & Apparel,Environmental,Climate Transition,4
+Boohoo,Textiles & Apparel,Environmental,Energy & Resource Use,3
+Boohoo,Textiles & Apparel,Environmental,Biodiversity,1
+Boohoo,Textiles & Apparel,Environmental,Water Use,1
+Boohoo,Textiles & Apparel,Environmental,Waste & Pollution,1
+Boohoo,Textiles & Apparel,Social,Social,1.6
+Boohoo,Textiles & Apparel,Social,Labour Reations,2
+Boohoo,Textiles & Apparel,Social,Health & Safety,1
+Boohoo,Textiles & Apparel,Social,Human Rights & Community,2
+Boohoo,Textiles & Apparel,Governance,Governance,3.1
+Boohoo,Textiles & Apparel,Governance,Board & Management,5
+Boohoo,Textiles & Apparel,Governance,Shareholder Rights,2
+Boohoo,Textiles & Apparel,Governance,Conduct & Anti-Corruption,2
+Boohoo,Textiles & Apparel,Governance,Tax Transperancy & Accounting,2
+Under Armour,Textiles & Apparel,Environmental,Environmental,2.4
+Under Armour,Textiles & Apparel,Environmental,Climate Transition,4
+Under Armour,Textiles & Apparel,Environmental,Energy & Resource Use,3
+Under Armour,Textiles & Apparel,Environmental,Biodiversity,1
+Under Armour,Textiles & Apparel,Environmental,Water Use,1
+Under Armour,Textiles & Apparel,Environmental,Waste & Pollution,1
+Under Armour,Textiles & Apparel,Social,Social,1.6
+Under Armour,Textiles & Apparel,Social,Labour Reations,2
+Under Armour,Textiles & Apparel,Social,Health & Safety,1
+Under Armour,Textiles & Apparel,Social,Human Rights & Community,2
+Under Armour,Textiles & Apparel,Governance,Governance,3.1
+Under Armour,Textiles & Apparel,Governance,Board & Management,5
+Under Armour,Textiles & Apparel,Governance,Shareholder Rights,2
+Under Armour,Textiles & Apparel,Governance,Conduct & Anti-Corruption,2
+Under Armour,Textiles & Apparel,Governance,Tax Transperancy & Accounting,2
